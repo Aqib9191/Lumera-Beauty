@@ -41,6 +41,15 @@ const AppContent: React.FC = () => {
       return <OrderConfirmationPage orderId={orderId} />;
     }
 
+    if (activePath.startsWith('/category/')) {
+      const catSlug = activePath.replace('/category/', '');
+      const formattedCategory = catSlug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      return <ShopPage initialCategory={formattedCategory} />;
+    }
+
     switch (activePath) {
       case '/':
         return <HomePage />;
@@ -61,6 +70,8 @@ const AppContent: React.FC = () => {
       case '/new-arrivals':
         return <ShopPage isNewArrivalsOnly={true} />;
       case '/checkout':
+        return <CheckoutPage />;
+      case '/cart':
         return <CheckoutPage />;
       case '/order-confirmation':
         return <OrderConfirmationPage />;

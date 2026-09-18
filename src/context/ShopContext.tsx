@@ -98,20 +98,50 @@ interface ShopContextType {
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
+// Helper function to extract normalized relative route
+const getNormalizedPath = (): string => {
+  if (typeof window === 'undefined') return '/';
+
+  // Support spa-github-pages redirect parameter if present (?/path)
+  const search = window.location.search;
+  if (search && search.startsWith('?/')) {
+    const rawQueryPath = search.slice(1).split('&')[0];
+    return rawQueryPath.startsWith('/') ? rawQueryPath : '/' + rawQueryPath;
+  }
+
+  const base = import.meta.env.BASE_URL || '/';
+  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  let pathname = window.location.pathname || '/';
+
+  if (cleanBase && pathname.startsWith(cleanBase)) {
+    pathname = pathname.slice(cleanBase.length);
+  }
+  if (!pathname.startsWith('/')) {
+    pathname = '/' + pathname;
+  }
+  return pathname || '/';
+};
+
+// Helper function to construct full URL respecting Vite base path
+const toAppUrl = (path: string): string => {
+  const base = import.meta.env.BASE_URL || '/';
+  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+  return cleanBase ? `${cleanBase}${cleanPath}` : cleanPath;
+};
+
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Navigation State
   const [activePath, setActivePath] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      return path && path !== '' ? path : '/';
-    }
-    return '/';
+    return getNormalizedPath();
   });
 
   const navigateTo = (path: string, scrollToTop = true) => {
-    setActivePath(path);
+    const normalized = path.startsWith('/') ? path : '/' + path;
+    setActivePath(normalized);
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', path);
+      const fullUrl = toAppUrl(normalized);
+      window.history.pushState({}, '', fullUrl);
       if (scrollToTop) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -120,7 +150,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const handlePopState = () => {
-      setActivePath(window.location.pathname || '/');
+      setActivePath(getNormalizedPath());
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);

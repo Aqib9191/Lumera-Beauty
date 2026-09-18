@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: '/Lumera-Beauty/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
